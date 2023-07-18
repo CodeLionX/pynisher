@@ -33,7 +33,8 @@ setup(
     },
     author=(
         "Stefan Falkner, Christina Hernandez-Wunsch, Samuel Mueller,"
-        "Matthias Feurer, Francisco Rivera, Eddie Bergman and Rene Sass",
+        "Matthias Feurer, Francisco Rivera, Eddie Bergman, Rene Sass,"
+        "and Sebastian Schmidl",
     ),
     author_email="feurerm@informatik.uni-freiburg.de",
     description="A library to limit the resources used by functions using subprocesses",

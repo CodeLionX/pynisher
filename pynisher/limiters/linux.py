@@ -31,12 +31,17 @@ class LimiterLinux(Limiter):
         memory : int
             The memory limit in bytes
         """
-        soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+        limit_type = (
+            resource.RLIMIT_AS
+            if self.memory_limit_type == "vms"
+            else resource.RLIMIT_RSS
+        )
+        soft, hard = resource.getrlimit(limit_type)
 
         self.old_limits = (soft, hard)
         new_limits = (memory, hard)
 
-        resource.setrlimit(resource.RLIMIT_AS, new_limits)
+        resource.setrlimit(limit_type, new_limits)
 
     def limit_cpu_time(self, cpu_time: int, interval: int = 5) -> None:
         """Limit the cpu time for this process.

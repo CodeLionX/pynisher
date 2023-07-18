@@ -63,6 +63,7 @@ class Pynisher(Generic[P, T]):
         wrap_errors: bool | list[str | Type[Exception]] | dict[str, Any] = ...,
         terminate_child_processes: bool = ...,
         forceful_keyboard_interrupt: bool = ...,
+        memory_limit_type: Literal["vms", "rss"] = ...,
     ) -> None:
         ...
 
@@ -83,6 +84,7 @@ class Pynisher(Generic[P, T]):
         wrap_errors: bool | list[str | Type[Exception]] | dict[str, Any] = ...,
         terminate_child_processes: bool = ...,
         forceful_keyboard_interrupt: bool = ...,
+        memory_limit_type: Literal["vms", "rss"] = ...,
     ) -> None:
         ...
 
@@ -100,6 +102,7 @@ class Pynisher(Generic[P, T]):
         wrap_errors: bool | list[str | Type[Exception]] | dict[str, Any] = False,
         terminate_child_processes: bool = True,
         forceful_keyboard_interrupt: bool = True,
+        memory_limit_type: Literal["vms", "rss"] = "vms",
     ) -> None:
         """
         Parameters
@@ -205,6 +208,11 @@ class Pynisher(Generic[P, T]):
             Whether keyboard interrupts should forceably kill any subprocess or the
             pynished function. If True, it will temrinate the process tree of
             the pynished function and then reraise the KeyboardInterrupt.
+
+        memory_limit_type: "vms" | "rss"
+            The type of memory to apply the memory limit on. "vms" restricts the virtual
+            address space and "rss" restricts the resident size (closer to the phiscal
+            memory usage).
         """  # noqa
         _cpu_time: int | None
         if isinstance(cpu_time, tuple):
@@ -251,6 +259,11 @@ class Pynisher(Generic[P, T]):
                     f" each must be in {valid_keys} "
                 )
 
+        if memory_limit_type not in ["vms", "rss"]:
+            raise ValueError(
+                f"`memory_limit_type` {memory_limit_type} must either be 'vms' or 'rss'"
+            )
+
         self.func = func
         self.name = name
         self.cpu_time = _cpu_time
@@ -266,6 +279,7 @@ class Pynisher(Generic[P, T]):
         self.wrap_errors = wrap_errors
         self.terminate_child_processes = terminate_child_processes
         self.forceful_keyboard_interrupt = forceful_keyboard_interrupt
+        self.memory_limit_type = memory_limit_type
 
         # Set once the function is running
         self._process: psutil.Process | None = None
@@ -338,6 +352,7 @@ class Pynisher(Generic[P, T]):
             warnings=self.warnings,
             wrap_errors=self.wrap_errors,
             terminate_child_processes=self.terminate_child_processes,
+            memory_limit_type=self.memory_limit_type,
         )
 
         # We now create the subprocess and let it know that it should call the limiter's

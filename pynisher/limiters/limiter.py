@@ -11,6 +11,8 @@ import sys
 import traceback
 from multiprocessing.connection import Connection
 
+from typing_extensions import Literal
+
 from pynisher.exceptions import (
     CpuTimeoutException,
     MemoryLimitException,
@@ -48,6 +50,7 @@ class Limiter(ABC):
         warnings: bool = True,
         wrap_errors: bool | list[str | Type[Exception]] | dict[str, Any] = False,
         terminate_child_processes: bool = True,
+        memory_limit_type: Literal["vms", "rss"] = "vms",
     ) -> None:
         """
         Parameters
@@ -77,6 +80,9 @@ class Limiter(ABC):
 
         terminate_child_processes: bool = True
             Whether to clean up all child processes upon completion
+
+        memory_limit_type : str = vms
+            Type of memory limit to apply. Just tested on Linux!
         """
         self.func = func
         self.output = output
@@ -86,6 +92,7 @@ class Limiter(ABC):
         self.warnings = warnings
         self.wrap_errors = wrap_errors
         self.terminate_child_processes = terminate_child_processes
+        self.memory_limit_type = memory_limit_type
 
     def __call__(self, *args: Any, **kwargs: Any) -> None:
         """Set process limits and then call the function with the given arguments.
@@ -111,7 +118,7 @@ class Limiter(ABC):
             if self.memory is not None:
                 # We should probably warn if we exceed the memory usage before
                 # any limitation is set
-                memusage = Monitor().memory("B")
+                memusage = Monitor().memory("B", kind=self.memory_limit_type)
                 if self.memory <= memusage:
                     self._raise_warning(
                         f"Current memory usage in new process is {memusage}B but "
@@ -188,6 +195,7 @@ class Limiter(ABC):
         warnings: bool = True,
         wrap_errors: bool | list[str | Type[Exception]] | dict[str, Any] = False,
         terminate_child_processes: bool = True,
+        memory_limit_type: Literal["vms", "rss"] = "vms",
     ) -> Limiter:
         """For full documentation, see __init__."""
         # NOTE: __init__ param duplication
@@ -202,6 +210,7 @@ class Limiter(ABC):
             "warnings": warnings,
             "wrap_errors": wrap_errors,
             "terminate_child_processes": terminate_child_processes,
+            "memory_limit_type": memory_limit_type,
         }
 
         # There is probably a lot more identifiers but for now this covers our use case

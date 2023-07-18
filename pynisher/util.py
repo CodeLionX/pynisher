@@ -239,7 +239,9 @@ class Monitor:
         usage = getattr(mem, kind)
         return memconvert(usage, frm="B", to=units)
 
-    def memlimit(self, units: str = "B") -> tuple[float, float] | None:
+    def memlimit(
+        self, units: str = "B", *, kind: str = "vms"
+    ) -> tuple[float, float] | None:
         """
 
         We can't limit using resource.setrlimit as it seems that None of the
@@ -251,6 +253,8 @@ class Monitor:
         ----------
         units : "B" | "KB" | "MB" | "GB" = "B"
             Units to measure in
+        kind : "vms" | "rss" = "vms"
+            Type of memory limit to measure
 
         Returns
         -------
@@ -258,8 +262,13 @@ class Monitor:
             The memory limit.
             Returns None if it can't be gotten
         """
-        if hasattr(psutil, "RLIMIT_AS"):
+        if kind == "vms" and hasattr(psutil, "RLIMIT_AS"):
             limits = self.process.rlimit(psutil.RLIMIT_AS)
+            if units != "B":
+                limits = tuple(memconvert(x, frm="B", to=units) for x in limits)
+            return limits
+        elif kind == "rss" and hasattr(psutil, "RLIMIT_RSS"):
+            limits = self.process.rlimit(psutil.RLIMIT_RSS)
             if units != "B":
                 limits = tuple(memconvert(x, frm="B", to=units) for x in limits)
             return limits
